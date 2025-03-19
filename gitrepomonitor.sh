@@ -296,34 +296,45 @@ function main
             [ -z "${LINE}" ] && continue
             # jump commented lines
             [[ ${LINE:0:1} == "#" ]] && continue
-            # directory exist ?
+            # repository/directory exist on file system?
             REPOSITORY="$LINE"
             if [ -d "$REPOSITORY" ] ; then
                 # change to directory
                 cd "$REPOSITORY"
+                # no errors then...
                 if [ $? -eq 0 ] ; then
                     # update git repository
                     _update "$REPOSITORY"
                     # move back for next one
                     cd ..
-                else
+                else # for any error, send a message to log file
                     logError "Unkown repository $REPOSITORY"
                 fi
-            else
+            else # does not exist yet.
+                # save the command line to log file
                 logIt "git clone -v --progress --recursive git@github.com:$KEY/$REPOSITORY.git"
+                # run the command line
                 RES=$(git clone -v --progress --recursive git@github.com:$KEY/$REPOSITORY.git)
+                # any error
                 if [ $? -ne 0 ] ; then
+                    # save a message on log file
                     logError "Clone git repository $REPOSITORY.git"
+                    # save command line result into log file
                     logIt "$RES"
                 fi
             fi
+        # read next line until the end of file $FILE
         done < "$FILE"
+        # save the runtime value into log file.
         RUNTIME=$(getRuntime)
         logIt "$RUNTIME"
+        # save interval into log file
         logInterval $SECS
+        # wait some seconds until the next looping
         sleep $SECS
     done
-    # should never reach from this point.
+    # should never reach this point, because
+    # the shell script is a daemon and has an infinite looping in it.
     return 0
 }
 
