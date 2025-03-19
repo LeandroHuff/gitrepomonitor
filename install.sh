@@ -11,6 +11,7 @@ BINDIR="/usr/local/bin"
 WORKDIR="/var/home/$USER/dev"
 USERDIR="/var/home/$USER"
 
+
 # unset all global vartiables and functions
 function unsetVars
 {
@@ -62,13 +63,13 @@ function _help
 cat << EOT
 Shell script program to install $DAEMONAPP as a daemon service.
 Version: $VERSION
-Usage: $SCRIPTNAME [-h] or $SCRIPTNAME
-Option:
+Usage: $SCRIPTNAME [-h] or $SCRIPTNAME [option] <value>
  -h | --help            Show this help information.
- -b | --bindir          Set binary directory destine.
- -s | --sysdir          Set service directory destine.
- -n | --appname         Set daemon application name+ext
- -w | --worksir         Set work directory.
+Options:
+ -b | --bindir  <directory>          Set binary directory destine.
+ -s | --sysdir  <directory>          Set service directory destine.
+ -n | --appname <name>         Set daemon application name+ext
+ -w | --worksir <directory>         Set work directory.
 EOT
     return 0
 }
@@ -80,6 +81,8 @@ EOT
 function _install
 {
     local err=0
+    local SERVICEFILE="$DAEMONAME.service"
+    local SCRIPTFILE="$DAEMONAPP"
 
 cat << EOT > /tmp/$DAEMONAME.service
 [Unit]
@@ -88,10 +91,10 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/bin/bash $BINDIR/$DAEMONAPP
-WorkingDirectory=$WORKDIR
-User=leandro
-Group=leandro
+ExecStart=/bin/bash $BINDIR/$SCRIPTFILE
+WorkingDirectory=$USERDIR
+User=$USER
+Group=$USER
 Restart=on-failure
 RestartSec=60
 StartLimitBurst=5
@@ -100,27 +103,27 @@ StartLimitBurst=5
 WantedBy=multi-user.target
 EOT
     if [ $? -eq 0 ] ; then
-        msgSuccess "Create file /tmp/$DAEMONAME.service"
-        sudo cp /tmp/$DAEMONAME.service $SYSDIR/
+        msgSuccess "Create file /tmp/$SERVICEFILE"
+        sudo cp /tmp/$SERVICEFILE $SYSDIR/
         if [ $? -ne 0 ] ; then
             err=$((err+1))
-            msgError "Copy file /tmp/$DAEMONAME.service to $SYSDIR/"
+            msgError "Copy file /tmp/$SERVICEFILE to $SYSDIR/"
         else
-            msgSuccess "Copy file /tmp/$DAEMONAME.service to $SYSDIR/"
+            msgSuccess "Copy file /tmp/$SERVICEFILE to $SYSDIR/"
         fi
-        rm -f /tmp/$DAEMONAME.service
+        rm -f /tmp/$SERVICEFILE
     else
         err=$((err+2))
-        msgError "Create file /tmp/$DAEMONAME.service"
+        msgError "Create file /tmp/$SERVICEFILE"
     fi
 
-    sudo cp ./$DAEMONAPP $BINDIR/
+    sudo cp ./$SCRIPTFILE $BINDIR/
 
     if [ $? -ne 0 ] ; then
         err=$((err+4))
-        msgError "Copy $DAEMONAPP file to $BINDIR/ directory."
+        msgError "Copy $SCRIPTFILE file to $BINDIR/ directory."
     else
-        msgSuccess "Copy $DAEMONAPP file to $BINDIR/ directory."
+        msgSuccess "Copy $SCRIPTFILE file to $BINDIR/ directory."
     fi
 
     return $err
