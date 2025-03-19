@@ -11,3 +11,14 @@ The ideas to build this project came from the repository daemons that store this
 Following the daemons project documents, I include some usefull information about daemon concept and its algoritms, source code format and how it could be implemented, these information was taken from others blogs and articles that teatch about how to create and implement a simple program (binary) or script (shell, python, perl, etc) to run as a daemon service on Linux system.
 
 [daemons](https://github.com/LeandroHuff/daemons)
+
+
+
+TOP result:
+
+![](images/top.png)
+
+
+
+HTOP result:
+![](images/htop.png)
