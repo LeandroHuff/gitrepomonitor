@@ -2,7 +2,7 @@
 
 # global variables
 START=$(( $(date +%s%N) / 1000000 ))
-VERSION="3.0.0"
+VERSION="2.0.0"
 SCRIPTNAME=$(basename "$0")
 DAEMONAPP="gitrepomonitor.sh"
 DAEMONAME=${DAEMONAPP%.*}
@@ -138,33 +138,33 @@ function main
     while [ -n "$1" ] ; do
         case "$1" in
         -h | --help) _help ; return $? ;;
-        -b | --bindir) shift ; $BINDIR="$1" ;;
-        -s | --sysdir) shift ; $SYSTEMDDIR="$1" ;;
+        -b | --bindir)  shift ; $BINDIR="$1" ;;
+        -s | --sysdir)  shift ; $SYSTEMDDIR="$1" ;;
         -n | --appname) shift ; $SCRIPTNAME="$1" ; DAEMONAME=${SCRIPTNAME%.*} ;;
         -w | --workdir) shift ; $WORKDIR="$1" ;;
         *) logError "Unknown parameter $1" ; return 1 ;;
         esac
         shift
     done
+    # install daemon service
     _install
+    # check for error and run daemon service
     if [ $? -eq 0 ] ; then
-        sudo systemctl stop "$DAEMONAME.service"   || err=$((err+1))
-        sudo systemctl daemon-reload               || err=$((err+2))
+        sudo systemctl stop "$DAEMONAME.service"   || err=$((err+2))
+        sudo systemctl daemon-reload               || err=$((err+3))
         sudo systemctl enable "$DAEMONAME.service" || err=$((err+4))
-        sudo systemctl start "$DAEMONAME.service"  || err=$((err+8))
+        sudo systemctl start "$DAEMONAME.service"  || err=$((err+16))
     else
-        logError "Install daemon $DAEMONAPP and $DAEMONAME.service failure."
-        err=$((err+16))
+        logError "Install daemon $DAEMONAPP and/or $DAEMONAME.service failure."
+        err=$((err+32))
     fi
+    # return code result
     return $err
 }
 
 # shell script entry point, call main() function and
 # pass all command line parameter "$@" to it.
 main "$@"
-# store returned code
 code=$?
-# unset all glocal variables and functions
 unsetVars
-# exit with code
 exit $code
