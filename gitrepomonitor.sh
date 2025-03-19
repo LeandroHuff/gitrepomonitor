@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# global variables
 START=$(( $(date +%s%N) / 1000000 ))
 VERSION="3.0.0"
 SCRIPTNAME=$(basename "$0")
@@ -12,6 +13,7 @@ LOGFILE="/tmp/$DAEMONAME.log"
 FILE="git.clone"
 SECS=300
 
+# unset all global vartiables and functions
 function unsetVars
 {
     unset -v START
