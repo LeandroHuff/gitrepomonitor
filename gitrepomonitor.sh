@@ -134,6 +134,9 @@ EOT
 }
 
 # prepare the program as a daemon and install it as daemon on systemd
+# daemoname.service will be copyied to /etc/systemd/system/ directory.
+# scriptname.sh will be copyied to /usr/local/bin/ directory.
+# enable, start, and get status of daemon using systemctl system application.
 function _install
 {
     local err=0
@@ -183,6 +186,8 @@ EOT
     return $err
 }
 
+# check git repository status and proceed to update by
+# add, commit and push it to online github repository.
 function _update
 {
     local err=0
@@ -234,6 +239,8 @@ function _update
     return $err
 }
 
+# main application function, it have an infinite looping to
+# check local git repositories and proceed to update it if needed.
 function main
 {
     while [ -n "$1" ] ; do
@@ -302,7 +309,13 @@ function main
     return 0
 }
 
+# shell script entry point, call main() function and
+# pass all command line parameter "$@" to it.
 main "$@"
+
+# store returned code
 code=$?
+# unset all glocal variables and functions
 unsetVars
+# exit with code
 exit $code
