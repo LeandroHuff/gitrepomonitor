@@ -18,6 +18,7 @@ function unsetVars
     unset -v START
     unset -v VERSION
     unset -v SCRIPTNAME
+    unset -v DAEMONAPP
     unset -v DAEMONAME
     unset -v SYSDIR
     unset -v BINDIR
@@ -29,7 +30,6 @@ function unsetVars
     unset -f getRuntime
     unset -f _help
     unset -f _install
-    unset -f parseParameters
     unset -f main
 }
 
@@ -102,6 +102,7 @@ StartLimitBurst=5
 [Install]
 WantedBy=multi-user.target
 EOT
+
     if [ $? -eq 0 ] ; then
         msgSuccess "Create file /tmp/$SERVICEFILE"
         sudo cp /tmp/$SERVICEFILE $SYSDIR/
@@ -134,21 +135,36 @@ EOT
 function main
 {
     local err=0
-    # start parse all command line parameters
+
     while [ -n "$1" ] ; do
         case "$1" in
-        -h | --help) _help ; return $? ;;
-        -b | --bindir)  shift ; $BINDIR="$1" ;;
-        -s | --sysdir)  shift ; $SYSTEMDDIR="$1" ;;
-        -n | --appname) shift ; $SCRIPTNAME="$1" ; DAEMONAME=${SCRIPTNAME%.*} ;;
-        -w | --workdir) shift ; $WORKDIR="$1" ;;
-        *) logError "Unknown parameter $1" ; return 1 ;;
+        -h | --help)    _help
+                        return $?
+                        ;;
+        -b | --bindir)  shift
+                        $BINDIR="$1"
+                        ;;
+        -s | --sysdir)
+                        shift
+                        $SYSTEMDDIR="$1"
+                        ;;
+        -n | --appname) shift
+                        $SCRIPTNAME="$1"
+                        DAEMONAME=${SCRIPTNAME%.*}
+                        ;;
+        -w | --workdir)
+                        shift
+                        $WORKDIR="$1"
+                        ;;
+        *)              logError "Unknown parameter $1"
+                        return 1
+                        ;;
         esac
         shift
     done
-    # install daemon service
+
     _install
-    # check for error and run daemon service
+
     if [ $? -eq 0 ] ; then
         sudo systemctl stop "$DAEMONAME.service"   || err=$((err+2))
         sudo systemctl daemon-reload               || err=$((err+3))
@@ -158,7 +174,7 @@ function main
         logError "Install daemon $DAEMONAPP and/or $DAEMONAME.service failure."
         err=$((err+32))
     fi
-    # return code result
+
     return $err
 }
 
