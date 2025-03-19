@@ -1,175 +1,153 @@
 #!/bin/bash
 
-DEBUG=0
+# global variables
+START=$(( $(date +%s%N) / 1000000 ))
+VERSION="3.0.0"
+SCRIPTNAME=$(basename "$0")
+DAEMONAME=${SCRIPTNAME%.*}
+SYSTEMDDIR="/etc/systemd/system"
+BINDIR="/usr/local/bin"
+WORKDIR="/var/home/$USER/dev"
+USERDIR="/var/home/$USER"
 
-function error
-{
-    printf "\033[91merror  :\033[0m %s\n" "$1"
-}
-
-function debug
-{
-    [ $DEBUG -ne 0 ] && printf "\033[92mdebug  :\033[0m %s\n" "$1"
-}
-
-function success
-{
-    printf "\033[97msuccess:\033[0m %s\n" "$1"
-}
-
-
+# unset all global vartiables and functions
 function unsetVars
 {
-    unset -v DEBUG
-    unset -f error
-    unset -f debug
-    unset -f unsetVars
-    unset -f _exit
+    unset -v START
+    unset -v VERSION
+    unset -v SCRIPTNAME
+    unset -v DAEMONAME
+    unset -v SYSTEMDDIR
+    unset -v BINDIR
+    unset -v WORKDIR
+    unset -v USERDIR
+
+    unset -f msgError
+    unset -f msgSuccess
+    unset -f getRuntime
     unset -f _help
+    unset -f _install
+    unset -f parseParameters
     unset -f main
 }
 
-function _exit
+# send an error message to terminal
+function msgError
 {
-    local code=$([ -n "$1" ] && echo $1 || echo 0])
-    unsetVars
-    exit $code
+    echo -e "\033[91merror:\033[0m $1"
 }
 
+# send a success message to terminal
+function msgSuccess
+{
+    echo -e "\033[92msuccess:\033[0m $1"
+}
+
+# calculate the elapsed runtime and return a formatted message
+function getRuntime
+{
+    local NOW
+    local RUNTIME
+    NOW=$(( $(date +%s%N) / 1000000 ))
+    RUNTIME=$((NOW-START))
+    printf -v ELAPSED "%u.%03u" $((RUNTIME / 1000)) $((RUNTIME % 1000))
+    echo -e "\033[97mruntime:\033[0m ${ELAPSED}s"
+    unset -v ELAPSED
+}
+
+# print help message and information to terminal
 function _help
 {
-    local SCRIPT=$(basename "$0")
-    cat << EOT
-Script program to automate install a service test daemon."
+cat << EOT
+File to run a shell script program as a daemon.
+Version: $VERSION
+Usage: $SCRIPTNAME [-h] | [-i] or $SCRIPTNAME < -k|--key <GitUserName> > [ -t <time> ]
+Option:
+ -h | --help                Show this help information.
+ -i | --install             Prepare and install all files into each system folders.
+ -t | --interval <time>     Set a new interval in seconds to update the repository, default is 300s.
+ -k | --key <GitUserName>   Set github user for pull and push commands.
 
-Usage: $SCRIPT [-h] | [-d] [options]
-
- -h     Show help information.
- -d     Enable debug messages.
-
-[Options]
-
- -n  <name>     Set daemon name.
- -sn <name>     Set service ename as name.service
- -sd <dir>      Set service directory.
- -td <dir>      Set target directory.
-
+Obs.: Call script with -h or -i parameter will return from script to terminal without run as daemon.
 EOT
-}
-
-function main
-{
-    local force=0
-    local DAEMON="gitrepomonitor.sh"
-    local DAEMONAME=${DAEMON%.*}
-    local SERVICENAME="${DAEMONAME}.service"
-    local SERVICEDIR="/etc/systemd/system"
-    local TARGETDIR="/usr/local/bin"
-
-    while [ -n "$1" ] ; do
-        case "$1" in
-        -h)
-            _help
-            return 0
-            ;;
-        -d)
-            DEBUG=1
-            debug "[DEBUG] flag was set to ON."
-            ;;
-        -f)
-            force=1
-            debug "[FORCE] flag was set to ON."
-            ;;
-        -n)
-            shift
-            DAEMONAME="$1"
-            debug "DAEMONAME was set to $DAEMONAME"
-            ;;
-        -sn)
-            shift
-            SERVICENAME="$1.service"
-            debug "SERVICENAME was set to $SERVICENAME"
-            ;;
-        -sd)
-            shift
-            SERVICEDIR="$1"
-            debug "SERVICENAME was set to $SERVICEDIR"
-            ;;
-        -td)
-            shift
-            TARGETDIR="$1"
-            debug "TARGETDIR was set to $TARGETDIR"
-            ;;
-        *)
-            error "Unknown parameter [$1]"
-            ;;
-        esac
-        shift
-    done
-
-    if ! [ -d $SERVICEDIR ] ; then
-        error "$SERVICEDIR does not exist."
-        return 1
-    else
-        debug "$SERVICEDIR directory already exist."
-    fi
-
-    if ! [ -f $SERVICEDIR/$SERVICENAME ] || [ $force -ne 0 ] ; then
-        debug "cp ./$SERVICENAME $SERVICEDIR/"
-        sudo cp ./$SERVICENAME $SERVICEDIR/
-        if [ $? -ne 0 ] ; then
-            error "Copy daemon $SERVICENAME to $SERVICEDIR/"
-            return 1
-        fi
-    else
-        debug "$SERVICEDIR/$SERVICENAME file already exist."
-    fi
-
-    if ! [ -f $TARGETDIR/$DAEMON ] || [ $force -ne 0 ]  ; then
-        debug "sudo cp $DAEMON $TARGETDIR/"
-        sudo cp $DAEMON $TARGETDIR/
-        if [ $? -ne 0 ] ; then
-            error  "Copy daemon $DAEMON to $TARGETDIR/"
-            return 1
-        fi
-    else
-        debug "$TARGETDIR/$DAEMON file already exist."
-    fi
-
-    success "copy all files for $DAEMONAME"
-
-    sleep 0.5
-
-    debug "sudo systemctl stop $SERVICENAME"
-    sudo systemctl stop $SERVICENAME
-
-    sleep 0.5
-
-    debug "sudo systemctl disable $SERVICENAME"
-    sudo systemctl disable $SERVICENAME
-
-    sleep 0.5
-
-    debug "sudo systemctl daemon-reload"
-    sudo systemctl daemon-reload
-
-    sleep 0.5
-
-    debug "sudo systemctl start $SERVICENAME"
-    sudo systemctl start $SERVICENAME
-
-    sleep 0.5
-
-    debug "sudo systemctl enable $SERVICENAME"
-    sudo systemctl enable $SERVICENAME
-
-    sleep 0.5
-
-    debug "sudo systemctl status $SERVICENAME"
-    sudo systemctl status $SERVICENAME
-
     return 0
 }
 
+# prepare the program as a daemon and install it as daemon on systemd
+# daemoname.service will be copyied to /etc/systemd/system/ directory.
+# scriptname.sh will be copyied to /usr/local/bin/ directory.
+# enable, start, and get status of daemon using systemctl system application.
+function _install
+{
+    local err=0
+
+cat << EOT > /tmp/$DAEMONAME.service
+[Unit]
+Description=Git (Status/Commit/Push) Monitor
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/bin/bash $BINDIR/$SCRIPTNAME
+WorkingDirectory=$WORKDIR
+User=leandro
+Group=leandro
+Restart=on-failure
+RestartSec=60
+StartLimitBurst=5
+
+[Install]
+WantedBy=multi-user.target
+EOT
+    if [ $? -eq 0 ] ; then
+        msgSuccess "Create file /tmp/$DAEMONAME.service"
+        sudo cp /tmp/$DAEMONAME.service $SYSTEMDDIR/
+        if [ $? -ne 0 ] ; then
+            err=$((err+1))
+            msgError "Copy file /tmp/$DAEMONAME.service to $SYSTEMDDIR/"
+        else
+            msgSuccess "Copy file /tmp/$DAEMONAME.service to $SYSTEMDDIR/"
+        fi
+        rm -f /tmp/$DAEMONAME.service
+    else
+        err=$((err+2))
+        msgError "Create file /tmp/$DAEMONAME.service"
+    fi
+
+    sudo cp ./$SCRIPTNAME $BINDIR/
+
+    if [ $? -ne 0 ] ; then
+        err=$((err+4))
+        msgError "Copy $SCRIPTNAME file to $BINDIR/ directory."
+    else
+        msgSuccess "Copy $SCRIPTNAME file to $BINDIR/ directory."
+    fi
+
+    return $err
+}
+
+# main application function, it have an infinite looping to
+# check local git repositories and proceed to update it if needed.
+function main
+{
+    # start parse all command line parameters
+    while [ -n "$1" ] ; do
+        case "$1" in
+        -h | --help) _help ; return $? ;;
+        -i | --install) _install ; return $? ;;
+        *) logError "Unknown parameter $1" ; return 1 ;;
+        esac
+        shift
+    done
+    return 0
+}
+
+# shell script entry point, call main() function and
+# pass all command line parameter "$@" to it.
 main "$@"
-_exit $?
+# store returned code
+code=$?
+# unset all glocal variables and functions
+unsetVars
+# exit with code
+exit $code
