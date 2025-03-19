@@ -44,26 +44,31 @@ function unsetVars
     unset -f main
 }
 
+# send an error message to terminal
 function msgError
 {
     echo -e "\033[91merror:\033[0m $1"
 }
 
+# send a success message to terminal
 function msgSuccess
 {
     echo -e "\033[92msuccess:\033[0m $1"
 }
 
+# send an error message to a log file
 function logError
 {
     echo -e "\033[91merror:\033[0m $1" >> $LOGFILE
 }
 
+# send a success message to a log file
 function logSuccess
 {
     echo -e "\033[92msuccess:\033[0m $1" >> $LOGFILE
 }
 
+# calculate the elapsed runtime and return a formatted message
 function getRuntime
 {
     local NOW
@@ -75,16 +80,19 @@ function getRuntime
     unset -v ELAPSED
 }
 
+# send a new line to log file
 function logNewLine
 {
     echo >> $LOGFILE
 }
 
+# clear all log file
 function logClear
 {
     echo > $LOGFILE
 }
 
+# send a formatted date to log file and return it to caller point
 function logDate
 {
     local DATE
@@ -93,11 +101,13 @@ function logDate
     echo -n "$DATE"
 }
 
+# send a message parameter to log file
 function logIt
 {
     echo -e "$1" >> $LOGFILE
 }
 
+# prepare an interval message and send it to log file
 function logInterval
 {
     local secs=$1
@@ -105,6 +115,7 @@ function logInterval
     echo -e "\033[97minterval:\033[0m Wait for ${secs}s or ${mins}m" >> $LOGFILE
 }
 
+# print help message and information to terminal
 function _help
 {
 cat << EOT
@@ -122,6 +133,7 @@ EOT
     return 0
 }
 
+# prepare the program as a daemon and install it as daemon on systemd
 function _install
 {
     local err=0
