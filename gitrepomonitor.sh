@@ -273,14 +273,14 @@ function main
 
     # clear log file
     logClear
-    # save date on log file
-    DATE=$(logDate)
 
     # start an infinite looping
     while [ true ]
     do
         # add a new line on log file
         logNewLine
+        # save date on log file
+        DATE=$(logDate)
         # save the runtime value on log file
         RUNTIME=$(getRuntime)
         logIt "$RUNTIME"
