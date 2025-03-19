@@ -144,16 +144,14 @@ function main
         -b | --bindir)  shift
                         $BINDIR="$1"
                         ;;
-        -s | --sysdir)
-                        shift
+        -s | --sysdir)  shift
                         $SYSTEMDDIR="$1"
                         ;;
         -n | --appname) shift
                         $SCRIPTNAME="$1"
                         DAEMONAME=${SCRIPTNAME%.*}
                         ;;
-        -w | --workdir)
-                        shift
+        -w | --workdir) shift
                         $WORKDIR="$1"
                         ;;
         *)              logError "Unknown parameter $1"
