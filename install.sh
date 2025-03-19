@@ -4,7 +4,7 @@
 START=$(( $(date +%s%N) / 1000000 ))
 VERSION="3.0.0"
 SCRIPTNAME=$(basename "$0")
-DAEMONAME=${SCRIPTNAME%.*}
+DAEMONAME="gitrepomonitor.sh"
 SYSTEMDDIR="/etc/systemd/system"
 BINDIR="/usr/local/bin"
 WORKDIR="/var/home/$USER/dev"
@@ -59,16 +59,15 @@ function getRuntime
 function _help
 {
 cat << EOT
-File to run a shell script program as a daemon.
+Shell script program to install $DAEMONAME as a daemon service.
 Version: $VERSION
 Usage: $SCRIPTNAME [-h] | [-i] or $SCRIPTNAME < -k|--key <GitUserName> > [ -t <time> ]
 Option:
- -h | --help                Show this help information.
- -i | --install             Prepare and install all files into each system folders.
- -t | --interval <time>     Set a new interval in seconds to update the repository, default is 300s.
- -k | --key <GitUserName>   Set github user for pull and push commands.
-
-Obs.: Call script with -h or -i parameter will return from script to terminal without run as daemon.
+ -h | --help            Show this help information.
+ -b | --bindir          Set binary directory destine.
+ -s | --sysdir          Set service directory destine.
+ -n | --appname         Set daemon application name+ext
+ -w | --worksir         Set work directory.
 EOT
     return 0
 }
@@ -88,7 +87,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/bin/bash $BINDIR/$SCRIPTNAME
+ExecStart=/bin/bash $BINDIR/$DAEMONAME
 WorkingDirectory=$WORKDIR
 User=leandro
 Group=leandro
