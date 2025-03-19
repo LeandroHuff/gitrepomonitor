@@ -60,7 +60,7 @@ EOT
 function main
 {
     local force=0
-    local DAEMON="gitmonitor.sh"
+    local DAEMON="gitrepomonitor.sh"
     local DAEMONAME=${DAEMON%.*}
     local SERVICENAME="${DAEMONAME}.service"
     local SERVICEDIR="/etc/systemd/system"
