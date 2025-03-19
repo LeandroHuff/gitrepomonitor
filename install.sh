@@ -4,8 +4,9 @@
 START=$(( $(date +%s%N) / 1000000 ))
 VERSION="3.0.0"
 SCRIPTNAME=$(basename "$0")
-DAEMONAME="gitrepomonitor.sh"
-SYSTEMDDIR="/etc/systemd/system"
+DAEMONAPP="gitrepomonitor.sh"
+DAEMONAME=${DAEMONAPP%.*}
+SYSDIR="/etc/systemd/system"
 BINDIR="/usr/local/bin"
 WORKDIR="/var/home/$USER/dev"
 USERDIR="/var/home/$USER"
@@ -17,7 +18,7 @@ function unsetVars
     unset -v VERSION
     unset -v SCRIPTNAME
     unset -v DAEMONAME
-    unset -v SYSTEMDDIR
+    unset -v SYSDIR
     unset -v BINDIR
     unset -v WORKDIR
     unset -v USERDIR
@@ -59,9 +60,9 @@ function getRuntime
 function _help
 {
 cat << EOT
-Shell script program to install $DAEMONAME as a daemon service.
+Shell script program to install $DAEMONAPP as a daemon service.
 Version: $VERSION
-Usage: $SCRIPTNAME [-h] | [-i] or $SCRIPTNAME < -k|--key <GitUserName> > [ -t <time> ]
+Usage: $SCRIPTNAME [-h] or $SCRIPTNAME
 Option:
  -h | --help            Show this help information.
  -b | --bindir          Set binary directory destine.
@@ -87,7 +88,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/bin/bash $BINDIR/$DAEMONAME
+ExecStart=/bin/bash $BINDIR/$DAEMONAPP
 WorkingDirectory=$WORKDIR
 User=leandro
 Group=leandro
@@ -100,12 +101,12 @@ WantedBy=multi-user.target
 EOT
     if [ $? -eq 0 ] ; then
         msgSuccess "Create file /tmp/$DAEMONAME.service"
-        sudo cp /tmp/$DAEMONAME.service $SYSTEMDDIR/
+        sudo cp /tmp/$DAEMONAME.service $SYSDIR/
         if [ $? -ne 0 ] ; then
             err=$((err+1))
-            msgError "Copy file /tmp/$DAEMONAME.service to $SYSTEMDDIR/"
+            msgError "Copy file /tmp/$DAEMONAME.service to $SYSDIR/"
         else
-            msgSuccess "Copy file /tmp/$DAEMONAME.service to $SYSTEMDDIR/"
+            msgSuccess "Copy file /tmp/$DAEMONAME.service to $SYSDIR/"
         fi
         rm -f /tmp/$DAEMONAME.service
     else
@@ -113,13 +114,13 @@ EOT
         msgError "Create file /tmp/$DAEMONAME.service"
     fi
 
-    sudo cp ./$SCRIPTNAME $BINDIR/
+    sudo cp ./$DAEMONAPP $BINDIR/
 
     if [ $? -ne 0 ] ; then
         err=$((err+4))
-        msgError "Copy $SCRIPTNAME file to $BINDIR/ directory."
+        msgError "Copy $DAEMONAPP file to $BINDIR/ directory."
     else
-        msgSuccess "Copy $SCRIPTNAME file to $BINDIR/ directory."
+        msgSuccess "Copy $DAEMONAPP file to $BINDIR/ directory."
     fi
 
     return $err
