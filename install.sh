@@ -115,8 +115,8 @@ function main
     fi
 
     if ! [ -f $SERVICEDIR/$SERVICENAME ] || [ $force -ne 0 ] ; then
-        debug "cp $SERVICENAME $SERVICEDIR/"
-        sudo cp $SERVICENAME $SERVICEDIR/
+        debug "cp ./$SERVICENAME $SERVICEDIR/"
+        sudo cp ./$SERVICENAME $SERVICEDIR/
         if [ $? -ne 0 ] ; then
             error "Copy daemon $SERVICENAME to $SERVICEDIR/"
             return 1
