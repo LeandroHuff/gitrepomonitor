@@ -63,13 +63,13 @@ function _help
 cat << EOT
 Shell script program to install $DAEMONAPP as a daemon service.
 Version: $VERSION
-Usage: $SCRIPTNAME [-h] or $SCRIPTNAME [option] <value>
- -h | --help            Show this help information.
+Usage  : $SCRIPTNAME [-h] or $SCRIPTNAME [option] <value>
+ -h | --help                    Show this help information.
 Options:
- -b | --bindir  <directory>          Set binary directory destine.
- -s | --sysdir  <directory>          Set service directory destine.
- -n | --appname <name>         Set daemon application name+ext
- -w | --worksir <directory>         Set work directory.
+ -b | --bindir  <directory>     Set binary directory destine.
+ -s | --sysdir  <directory>     Set service directory destine.
+ -n | --appname <name>          Set daemon application name+ext
+ -w | --worksir <directory>     Set work directory.
 EOT
     return 0
 }
@@ -133,6 +133,7 @@ EOT
 # check local git repositories and proceed to update it if needed.
 function main
 {
+    local err=0
     # start parse all command line parameters
     while [ -n "$1" ] ; do
         case "$1" in
@@ -146,7 +147,16 @@ function main
         shift
     done
     _install
-    return $?
+    if [ $? -eq 0 ] ; then
+        sudo systemctl stop "$DAEMONAME.service"   || err=$((err+1))
+        sudo systemctl daemon-reload               || err=$((err+2))
+        sudo systemctl enable "$DAEMONAME.service" || err=$((err+4))
+        sudo systemctl start "$DAEMONAME.service"  || err=$((err+8))
+    else
+        logError "Install daemon $DAEMONAPP and $DAEMONAME.service failure."
+        err=$((err+16))
+    fi
+    return $err
 }
 
 # shell script entry point, call main() function and
