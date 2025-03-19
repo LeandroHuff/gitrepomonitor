@@ -243,13 +243,19 @@ function _update
 # check local git repositories and proceed to update it if needed.
 function main
 {
+    # parse all command line parameters
     while [ -n "$1" ] ; do
         case "$1" in
+        # help parameter (optional)
         -h | --help) _help ; return $? ;;
+        # install parameter (optional)
         -i | --install) _install ; return $? ;;
+        # git user parameter (obligatory)
         -k | --key) shift ; KEY="$1" ;;
+        # git repository list file (optional, default is git.clone)
         -f | --file) shift ; FILE="$1" ;;
-        -t | --interval) shift ; SECS=$1 ;;
+        # interval parameter (optional, default is 300s)
+        -t | --interval) shift ; SECS=$( [ -n "$1" ] echo $1 || echo 300) ;;
         *) msgError "Unknown parameter $1" ; return 1 ;;
         esac
         shift
@@ -311,6 +317,8 @@ function main
 
 # shell script entry point, call main() function and
 # pass all command line parameter "$@" to it.
+# this function should never come back, because it has an infinite loop inside.
+# its the daemon architecture, run on memory and never stop until kill the application.
 main "$@"
 
 # store returned code
