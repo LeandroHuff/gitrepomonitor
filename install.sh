@@ -134,12 +134,16 @@ function main
     while [ -n "$1" ] ; do
         case "$1" in
         -h | --help) _help ; return $? ;;
-        -i | --install) _install ; return $? ;;
+        -b | --bindir) shift ; $BINDIR="$1" ;;
+        -s | --sysdir) shift ; $SYSTEMDDIR="$1" ;;
+        -n | --appname) shift ; $SCRIPTNAME="$1" ; DAEMONAME=${SCRIPTNAME%.*} ;;
+        -w | --workdir) shift ; $WORKDIR="$1" ;;
         *) logError "Unknown parameter $1" ; return 1 ;;
         esac
         shift
     done
-    return 0
+    _install
+    return $?
 }
 
 # shell script entry point, call main() function and
