@@ -243,7 +243,7 @@ function _update
 # check local git repositories and proceed to update it if needed.
 function main
 {
-    # parse all command line parameters
+    # start parse all command line parameters
     while [ -n "$1" ] ; do
         case "$1" in
         # help parameter (optional)
@@ -252,15 +252,18 @@ function main
         -i | --install) _install ; return $? ;;
         # git user parameter (obligatory)
         -k | --key) shift ; KEY="$1" ;;
-        # git repository list file (optional, default is git.clone)
+        # git repository file list (optional, default is git.clone)
         -f | --file) shift ; FILE="$1" ;;
         # interval parameter (optional, default is 300s)
         -t | --interval) shift ; SECS=$( [ -n "$1" ] echo $1 || echo 300) ;;
-        *) msgError "Unknown parameter $1" ; return 1 ;;
+        # for empty or invalid parameter, print an error message on log.
+        *) logError "Unknown parameter $1" ; return 1 ;;
         esac
+        # next parameter from command line.
         shift
     done
 
+    # local variables
     local STS
     local RES
     local DATE
@@ -268,17 +271,26 @@ function main
     local RUNTIME
     local REPOSITORY
 
+    # clear log file
     logClear
+    # save date on log file
     DATE=$(logDate)
 
+    # start an infinite looping
     while [ true ]
     do
+        # add a new line on log file
         logNewLine
+        # save the runtime value on log file
         RUNTIME=$(getRuntime)
         logIt "$RUNTIME"
+        # change to user directory or log an error.
         cd $USERDIR || logError "Change to $USERDIR/"
+        # update git hub repository from user directory.
         _update "$USER"
+        # change to work directory .../dev/ and update git hub repository.
         cd "$WORKDIR" || logError "Change to $WORKDIR/"
+        # open $FILE and read line by line from it using each one as a repository name.
         while read -e LINE ; do
             # junp empty lines
             [ -z "${LINE}" ] && continue
