@@ -110,10 +110,10 @@ function _update
 
         DATE=$(getDate)
         MINS=$((SECS/60))
-        RES=$(git commit -m "Auto update ran at $DATE, next in ${SECS}s|${MINS}m")
+        RES=$(git commit -S -m "Auto update ran at $DATE, next in ${SECS}s|${MINS}m")
         if [ $? -ne 0 ] ; then
             err=$((err+2))
-            logError "git commit -m \"message\" failed for repository $REPO"
+            logError "git commit -S -m \"message\" failed for repository $REPO"
             logIt "$RES"
         fi
 
