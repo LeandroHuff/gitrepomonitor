@@ -64,7 +64,8 @@ function getRuntime
 
 function logRuntime
 {
-    echo -e "\033[97mruntime:\033[0m $1s" >> $LOGFILE
+    local RUNTIME=$(getRuntime)
+    echo -e "\033[97mruntime:\033[0m ${RUNTIME}s" >> $LOGFILE
 }
 
 function _help
@@ -164,8 +165,7 @@ function main
     do
         logNewLine
         logDate
-        RUNTIME=$(getRuntime)
-        logIt "$RUNTIME"
+        logRuntime
         cd $USERDIR || logError "Change to $USERDIR/"
         _update "$USER"
         cd "$WORKDIR" || logError "Change to $WORKDIR/"
@@ -187,8 +187,7 @@ function main
                 logError "Repository $REPOSITORY from file $FILE does not exist."
             fi
         done < "$FILE"
-        RUNTIME=$(getRuntime)
-        logRuntime "$RUNTIME"
+        logRuntime
         logInterval $SECS
         sleep $SECS
     done
