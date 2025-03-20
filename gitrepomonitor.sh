@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 START=$(( $(date +%s%N) / 1000000 ))
 SCRIPTNAME=$(basename "$0")
 LOGFILE="/tmp/${SCRIPTNAME%.*}.log"
