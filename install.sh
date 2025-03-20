@@ -98,7 +98,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/bin/bash $BINDIR/$SCRIPTFILE
+ExecStart=/bin/bash $BINDIR/$SCRIPTFILE -k LeandroHuff
 WorkingDirectory=$USERDIR
 User=$USER
 Group=$USER
