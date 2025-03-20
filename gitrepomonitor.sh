@@ -64,7 +64,7 @@ function getRuntime
 
 function logRuntime
 {
-    echo -e "\033[97mruntime:\033[0m $1s"
+    echo -e "\033[97mruntime:\033[0m $1s" >> $LOGFILE
 }
 
 function _help
