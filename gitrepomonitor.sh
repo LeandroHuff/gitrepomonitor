@@ -217,7 +217,7 @@ function _update
         RES=$(git commit -m "Auto update ran at $DATE, next in ${SECS}s|${MINS}m")
         if [ $? -ne 0 ] ; then
             err=$((err+2))
-            logError "git commit -m"
+            logError "git commit -m \"message\""
             logIt "$RES"
         fi
 

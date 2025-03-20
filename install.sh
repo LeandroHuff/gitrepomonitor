@@ -10,7 +10,7 @@ SYSDIR="/etc/systemd/system"
 BINDIR="/usr/local/bin"
 WORKDIR="/var/home/$USER/dev"
 USERDIR="/var/home/$USER"
-
+RELOAD=0
 
 # unset all global vartiables and functions
 function unsetVars
@@ -24,6 +24,7 @@ function unsetVars
     unset -v BINDIR
     unset -v WORKDIR
     unset -v USERDIR
+    unset -v RELOAD
 
     unset -f msgError
     unset -f msgSuccess
@@ -43,6 +44,11 @@ function msgError
 function msgSuccess
 {
     echo -e "\033[92msuccess:\033[0m $1"
+}
+
+function msgWarning
+{
+    echo -e "\033[96mwarning:\033[0m $1"
 }
 
 # calculate the elapsed runtime and return a formatted message
@@ -69,7 +75,8 @@ Options:
  -b | --bindir  <directory>     Set binary directory destine.
  -s | --sysdir  <directory>     Set service directory destine.
  -n | --appname <name>          Set daemon application name+ext
- -w | --worksir <directory>     Set work directory.
+ -w | --workdir <directory>     Set work directory.
+ -r | --reload                  Enable reload daemon service at the end.
 EOT
     return 0
 }
@@ -141,20 +148,28 @@ function main
         -h | --help)    _help
                         return $?
                         ;;
+
         -b | --bindir)  shift
                         $BINDIR="$1"
                         ;;
+
         -s | --sysdir)  shift
                         $SYSTEMDDIR="$1"
                         ;;
+
         -n | --appname) shift
                         $SCRIPTNAME="$1"
                         DAEMONAME=${SCRIPTNAME%.*}
                         ;;
+
         -w | --workdir) shift
                         $WORKDIR="$1"
                         ;;
-        *)              logError "Unknown parameter $1"
+
+        -r | --reload) RELOAD=1
+                       ;;
+
+        *)              msgError "Unknown parameter $1"
                         return 1
                         ;;
         esac
@@ -164,15 +179,27 @@ function main
     _install
 
     if [ $? -eq 0 ] ; then
-        sudo systemctl stop "$DAEMONAME.service"   || err=$((err+2))
-        sudo systemctl daemon-reload               || err=$((err+3))
-        sudo systemctl enable "$DAEMONAME.service" || err=$((err+4))
-        sudo systemctl start "$DAEMONAME.service"  || err=$((err+16))
+        msgSuccess "Install $DAEMONAME daemon service."
+        if [ $RELOAD -ne 0 ] ; then
+            sudo systemctl stop "$DAEMONAME.service"   || err=$((err+2))
+            sleep 0.5
+            sudo systemctl daemon-reload               || err=$((err+3))
+            sleep 0.5
+            sudo systemctl enable "$DAEMONAME.service" || err=$((err+4))
+            sleep 0.5
+            sudo systemctl start "$DAEMONAME.service"  || err=$((err+16))
+            if [ $err -eq 0 ] ; then
+                msgSuccess "Run all systemctl command line."
+            else
+                msgError "systemctl command returned one or more error codes."
+            fi
+        else
+            msgWarning "Flag auto-reload was not set from command line."
+        fi
     else
-        logError "Install daemon $DAEMONAPP and/or $DAEMONAME.service failure."
+        msgError "Install daemon $DAEMONAPP and/or $DAEMONAME.service failure."
         err=$((err+32))
     fi
-
     return $err
 }
 
