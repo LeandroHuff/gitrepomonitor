@@ -181,13 +181,15 @@ function main
     if [ $? -eq 0 ] ; then
         msgSuccess "Install $DAEMONAME daemon service."
         if [ $RELOAD -ne 0 ] ; then
-            sudo systemctl stop "$DAEMONAME.service"   || err=$((err+2))
+            sudo systemctl stop "$DAEMONAME.service" || err=$((err+2))
             sleep 0.5
-            sudo systemctl daemon-reload               || err=$((err+3))
+            sudo systemctl disable "$DAEMONAME.service" || err=$((err+4))
             sleep 0.5
-            sudo systemctl enable "$DAEMONAME.service" || err=$((err+4))
+            sudo systemctl daemon-reload || err=$((err+8))
             sleep 0.5
-            sudo systemctl start "$DAEMONAME.service"  || err=$((err+16))
+            sudo systemctl enable "$DAEMONAME.service" || err=$((err+16))
+            sleep 0.5
+            sudo systemctl start "$DAEMONAME.service" || err=$((err+32))
             if [ $err -eq 0 ] ; then
                 msgSuccess "Run all systemctl command line."
             else
@@ -198,7 +200,7 @@ function main
         fi
     else
         msgError "Install daemon $DAEMONAPP and/or $DAEMONAME.service failure."
-        err=$((err+32))
+        err=$((err+64))
     fi
     return $err
 }
