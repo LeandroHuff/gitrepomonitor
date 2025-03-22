@@ -88,6 +88,7 @@ function _update
     local WAIT
     local MINS
     local err
+    local code
 
     REPO="$1"
     WAIT=$2
@@ -119,25 +120,27 @@ function _update
         MINS=$((WAIT/60))
         logDebug "(git commit -S -m \"message $DATE, ...${WAIT}s|${MINS}m\")"
         RES=$(git commit -S -m "Auto update ran at $DATE, next in ${WAIT}s|${MINS}m")
+        err=$?
         logDebug "$RES"
-        if [ $? -ne 0 ] ; then
+        if [ $err -ne 0 ] ; then
             err=$((err+2))
             logDebug "git commit -S -m \"message\" failed."
         else
             logDebug "Success run command line (git commit -S -m \"message...\")"
         fi
 
-        logDebug "(git pull origin)"
+        logDebug "(git pull)"
         RES=$(git pull origin)
+        err=$?
         logDebug "$RES"
-        if [ $? -ne 0 ] ; then
+        if [ $err -ne 0 ] ; then
             err=$((err+4))
             logDebug "git pull origin failed"
         else
             logDebug "Success run command line (git pull origin)"
         fi
 
-        logDebug "(git push origin)"
+        logDebug "(git push)"
         RES=$(git push origin)
         logDebug "$RES"
         if [ $? -ne 0 ] ; then

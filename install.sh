@@ -150,20 +150,20 @@ function main
                         ;;
 
         -b | --bindir)  shift
-                        $BINDIR="$1"
+                        BINDIR="$1"
                         ;;
 
         -s | --sysdir)  shift
-                        $SYSTEMDDIR="$1"
+                        SYSDIR="$1"
                         ;;
 
         -n | --appname) shift
-                        $SCRIPTNAME="$1"
+                        SCRIPTNAME="$1"
                         DAEMONAME=${SCRIPTNAME%.*}
                         ;;
 
         -w | --workdir) shift
-                        $WORKDIR="$1"
+                        WORKDIR="$1"
                         ;;
 
         -r | --reload) RELOAD=1
