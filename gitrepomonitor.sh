@@ -1,19 +1,24 @@
 #!/bin/bash
 
-
 START=$(( $(date +%s%N) / 1000000 ))
 SCRIPTNAME=$(basename "$0")
 LOGFILE="/tmp/${SCRIPTNAME%.*}.log"
+LOGDEBUG="/tmp/${SCRIPTNAME%.*}.dbg"
+DEBUG=0
 VERSION="3.0.0"
+
+RED="\033[91m"
+GREEN="\033[92m"
+YELLOW="\033[93m"
+BLUE="\033[94m"
+MAGENTA="\033[95m"
+CYAN="\033[96m"
+WHITE="\033[97m"
+NC="\033[0m"
 
 function logError
 {
-    echo -e "\033[91merror:\033[0m $1" >> $LOGFILE
-}
-
-function logSuccess
-{
-    echo -e "\033[92msuccess:\033[0m $1" >> $LOGFILE
+    echo -e "${RED}error:${NC} $1" >> $LOGFILE
 }
 
 function logNewLine
@@ -33,23 +38,9 @@ function getDate
     echo -n "$DATE"
 }
 
-function logDate
-{
-    local DATE
-    DATE=$(getDate)
-    echo -e "\033[97mdate:\033[0m $DATE" >> $LOGFILE
-}
-
 function logIt
 {
     echo -e "$1" >> $LOGFILE
-}
-
-function logInterval
-{
-    local secs=$1
-    local mins=$((secs/60))
-    echo -e "\033[97minterval:\033[0m Wait for ${secs}s or ${mins}m" >> $LOGFILE
 }
 
 function getRuntime
@@ -63,96 +54,142 @@ function getRuntime
     unset -v ELAPSED
 }
 
-function logRuntime
+function logDebug
 {
-    local RUNTIME=$(getRuntime)
-    echo -e "\033[97mruntime:\033[0m ${RUNTIME}s" >> $LOGFILE
+    if [ $DEBUG -ne 0 ] ; then
+        local RUNTIME
+        RUNTIME=$(getRuntime)
+        echo -e "[${RUNTIME}s] ${GREEN}debug:${NC} $1" >> $LOGDEBUG
+    fi
 }
 
 function _help
 {
 cat << EOT
 File to run a shell script program as a daemon.
-Version: $VERSION
-Usage: $SCRIPTNAME [-h] or $SCRIPTNAME < -k|--key <GitUserName> > [ -t <time> ]
+Version: ${WHITE}$VERSION${NC}
+Usage  : ${WHITE}$SCRIPTNAME${NC} [option] <value>
 Option:
- -h | --help                Show this help information.
+ -h | --help                Show this help information and return.
+ -d | --debug               Enable debug mode.
  -t | --interval <time>     Set a new interval in seconds to update the repository, default is 300s.
- -f | --file <filename>     Set repositories source list file.
-Obs.: Call script with -h parameter will return from script to terminal without run as daemon.
+ -f | --file <filename>     Set repositories source list file, default is "git.list".
 EOT
     return 0
 }
 
 function _update
 {
-    local err=0
     local STS
     local RES
     local MINS
     local DATE
-    local REPO="$1"
+    local REPO
+    local WAIT
+    local MINS
+    local err
+
+    REPO="$1"
+    WAIT=$2
+    err=0
+
+    logDebug "Starting function _update( $REPO )"
 
     STS=$(git status)
+    logDebug "$STS"
     if [[ $(echo "$STS" | grep -F "up to date"       ) ||    \
           $(echo "$STS" | grep -F "nothing to commit") ]] && \
      [[ ! $(echo "$STS" | grep -F "modified"         ) && \
         ! $(echo "$STS" | grep -F "untracked"        ) && \
         ! $(echo "$STS" | grep -F "deleted"          ) ]]
     then
-        :
+        logDebug "Nothing to do"
     else
+        logDebug "(git add .)"
         RES=$(git add .)
+        logDebug "$RES"
         if [ $? -ne 0 ] ; then
             err=$((err+1))
-            logError "git add . failed for repository $REPO"
-            logIt "$RES"
+            logDebug "git add . failed"
+        else
+            logDebug "Success run (git add .)"
         fi
 
         DATE=$(getDate)
-        MINS=$((SECS/60))
-        RES=$(git commit -S -m "Auto update ran at $DATE, next in ${SECS}s|${MINS}m")
+        MINS=$((WAIT/60))
+        logDebug "(git commit -S -m \"message $DATE, ...${WAIT}s|${MINS}m\")"
+        RES=$(git commit -S -m "Auto update ran at $DATE, next in ${WAIT}s|${MINS}m")
+        logDebug "$RES"
         if [ $? -ne 0 ] ; then
             err=$((err+2))
-            logError "git commit -S -m \"message\" failed for repository $REPO"
-            logIt "$RES"
+            logDebug "git commit -S -m \"message\" failed."
+        else
+            logDebug "Success run command line (git commit -S -m \"message...\")"
         fi
 
+        logDebug "(git pull origin)"
         RES=$(git pull origin)
+        logDebug "$RES"
         if [ $? -ne 0 ] ; then
             err=$((err+4))
-            logError "git pull origin failed for repository $REPO"
-            logIt "$RES"
+            logDebug "git pull origin failed"
+        else
+            logDebug "Success run command line (git pull origin)"
         fi
 
+        logDebug "(git push origin)"
         RES=$(git push origin)
+        logDebug "$RES"
         if [ $? -ne 0 ] ; then
             err=$((err+8))
-            logError "git push origin failed for repository $REPO"
-            logIt "$RES"
+            logError "git push origin failed"
+        else
+            logDebug "Success run command line (git push origin)"
         fi
     fi
 
     return $err
 }
 
+function _exit
+{
+    # get error code parameters, empty set as zero.
+    local CODE
+    CODE=$( [ -n "$1" ] && echo $1 || echo 0 )
+    logDebug "Exit code ($CODE)"
+    # unset global variables
+    unset -v START
+    unset -v SCRIPTNAME
+    unset -v LOGFILE
+    unset -v LOGDEBUG
+    unset -v DEBUG
+    unset -v VERSION
+    unset -v RED
+    unset -v GREEN
+    unset -v YELLOW
+    unset -v BLUE
+    unset -v MAGENTA
+    unset -v CYAN
+    unset -v WHITE
+    unset -v NC
+    # unset functions
+    unset -f main
+    unset -f _update
+    unset -f _help
+    unset -f getRuntime
+    unset -f getDate
+    unset -f logIt
+    unset -f logError
+    unset -f logDebug
+    unset -f logNewLine
+    unset -f logClear
+    unset -f _exit
+    # exit error code
+    exit $CODE
+}
+
 function main
 {
-    WORKDIR="/var/home/$USER/dev"
-    USERDIR="/var/home/$USER"
-    FILE="git.clone"
-    SECS=300
-
-    while [ -n "$1" ] ; do
-        case "$1" in
-        -h | --help)             _help ; return $? ;;
-        -f | --file)     shift ; FILE="$1" ;;
-        -t | --interval) shift ; SECS=$( [ -n "$1" ] && echo $1 || echo 300) ;;
-        *)                       logError "Unknown parameter $1" ; return 1 ;;
-        esac
-        shift
-    done
-
     local STS
     local RES
     local DATE
@@ -160,26 +197,105 @@ function main
     local RUNTIME
     local REPOSITORY
 
+    local WORKDIR
+    local USERDIR
+    local FILE
+    local WAIT
+    local MINS
+
+    WORKDIR="/var/home/$USER/dev"
+    USERDIR="/var/home/$USER"
+    FILE="git.list"
+    WAIT=300
+    MINS=$((WAIT/60))
+
+    while [ -n "$1" ] ; do
+        case "$1" in
+        -h | --help)
+            _help
+            return $?
+            ;;
+        -d | --debug)
+            # enable debug mode
+            DEBUG=1
+            # clear debug file
+            echo > $LOGDEBUG
+            # any error
+            if [ $? -ne 0 ] ; then
+                # disable debug mode
+                DEBUG=0
+                # log and error message
+                logError "Could not start debug to log $LOGDEBUG file."
+                # return an error code and exit
+                return 1
+            else
+                logIt "DEBUG is ON."
+            fi
+            ;;
+        -f | --file)
+            shift
+            local OLD=$FILE
+            FILE=$( [ -n "$1" ] && echo "$1" || echo "git.list")
+            logDebug "File repository list name changed from ($OLD) to ($FILE)."
+            ;;
+        -t | --interval)
+            shift
+            local OLD=$WAIT
+            WAIT=$( [ -n "$1" ] && echo  $1  || echo 300)
+            MINS=$((WAIT/60))
+            logDebug "Interval time changed from (${OLD}s) to (${WAIT}s|${MINS}m)."
+            ;;
+        *)
+            logDebug "Unknown parameter $1"
+            logError "Unknown parameter $1"
+            return 1
+            ;;
+        esac
+        shift
+    done
+
     logClear
+
+    DATE=$(getDate)
+    logDebug "Date $DATE"
+    logDebug "WORK  Dir: $WORKDIR/"
+    logDebug "USER  Dir: $USERDIR/"
+    logDebug "FILE name: $FILE"
+    logDebug "WAIT time: ${WAIT}s|${MINS}m"
 
     while [ true ]
     do
         logNewLine
-        logDate
-        logRuntime
-        cd $USERDIR || logError "Change to $USERDIR/"
-        _update "$USER"
-        cd "$WORKDIR" || logError "Change to $WORKDIR/"
+
+        DATE=$(getDate)
+        logIt "${WHITE}Date:${NC} $DATE"
+
+        RUNTIME=$(getRuntime)
+        logIt "${WHITE}runtime:${NC} ${RUNTIME}s"
+
+        if cd $USERDIR ; then
+            _update "$USER" $WAIT || logError "Update repository ($USER)"
+        else
+            logError "Change to $USERDIR/"
+        fi
+
+        if ! cd "$WORKDIR" ; then
+            logError "Change to $WORKDIR/"
+            reuturn 1
+        fi
+
         while read -e LINE ; do
             # ignore empty lines
             [ -z "${LINE}" ] && continue
             # ignore commented lines
             [[ ${LINE:0:1} == "#" ]] && continue
             REPOSITORY="$LINE"
+
             if [ -d "$REPOSITORY" ] ; then
                 cd "$REPOSITORY"
+
                 if [ $? -eq 0 ] ; then
-                    _update "$REPOSITORY"
+                    _update "$REPOSITORY" $WAIT || logError "Update repository ($REPOSITORY)"
                     cd ..
                 else
                     logError "Change to directory $REPOSITORY"
@@ -187,11 +303,20 @@ function main
             else
                 logError "Repository $REPOSITORY from file $FILE does not exist."
             fi
+
         done < "$FILE"
-        logRuntime
-        logInterval $SECS
-        sleep $SECS
+
+        RUNTIME=$(getRuntime)
+        logIt "${WHITE}runtime:${NC} ${RUNTIME}s"
+        logDebug "Runtime ${RUNTIME}s"
+
+        logIt "${WHITE}interval:${NC} Wait for ${WAIT}s|${MINS}m"
+        logDebug "Waiting for ${WAIT}s|${MINS}m ..."
+
+        sleep $WAIT
+
     done
 }
 
 main "$@"
+_exit $?

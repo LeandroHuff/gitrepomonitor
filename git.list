@@ -1,0 +1,21 @@
+# Empty lines or that are started by "#" are ignored.
+#asciiparser
+#baseproject
+daemons
+#encryptclose
+#encryptcreate
+#encryptopen
+#fetching
+gitrepomonitor
+#gps_nmea_decoder
+#lazarus
+#linkedlist
+#linuxdriver
+#mqttclient
+#pointermanagerstudy
+#programming
+#resources
+#SciTEUserProperties
+scripts
+#sqlite
+#start
