@@ -108,10 +108,12 @@ function _update
     else
         logDebug "(git add .)"
         RES=$(git add .)
+        code=$?
         logDebug "$RES"
-        if [ $? -ne 0 ] ; then
+        if [ $code -ne 0 ] ; then
             err=$((err+1))
             logDebug "git add . failed"
+            return 1
         else
             logDebug "Success run (git add .)"
         fi
@@ -120,32 +122,36 @@ function _update
         MINS=$((WAIT/60))
         logDebug "(git commit -S -m \"message $DATE, ...${WAIT}s|${MINS}m\")"
         RES=$(git commit -S -m "Auto update ran at $DATE, next in ${WAIT}s|${MINS}m")
-        err=$?
+        code=$?
         logDebug "$RES"
-        if [ $err -ne 0 ] ; then
+        if [ $code -ne 0 ] ; then
             err=$((err+2))
             logDebug "git commit -S -m \"message\" failed."
+            return 1
         else
             logDebug "Success run command line (git commit -S -m \"message...\")"
         fi
 
         logDebug "(git pull)"
         RES=$(git pull origin)
-        err=$?
+        code=$?
         logDebug "$RES"
-        if [ $err -ne 0 ] ; then
+        if [ $code -ne 0 ] ; then
             err=$((err+4))
             logDebug "git pull origin failed"
+            return 1
         else
             logDebug "Success run command line (git pull origin)"
         fi
 
         logDebug "(git push)"
         RES=$(git push origin)
+        code=$?
         logDebug "$RES"
-        if [ $? -ne 0 ] ; then
+        if [ $code -ne 0 ] ; then
             err=$((err+8))
             logError "git push origin failed"
+            return 1
         else
             logDebug "Success run command line (git push origin)"
         fi
@@ -317,7 +323,6 @@ function main
         logDebug "Waiting for ${WAIT}s|${MINS}m ..."
 
         sleep $WAIT
-
     done
 }
 
