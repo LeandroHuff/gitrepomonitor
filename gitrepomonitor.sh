@@ -9,6 +9,12 @@ ICONFAIL="/usr/local/bin/failure.png"
 DEBUG=0
 VERSION="3.0.0"
 
+ADD="git add ."
+COMMIT="git commit"
+PULL="git pull"
+PUSH="git push"
+NOMSG="< /dev/null 2>&1 > /dev/null"
+
 RED="\033[91m"
 GREEN="\033[92m"
 YELLOW="\033[93m"
@@ -108,53 +114,63 @@ function _update
     then
         logDebug "Nothing to do"
     else
-        logDebug "(git addd .)"
-        RES=$(git addd . < /dev/null 2>&1 > /dev/null)
+
+        ##########################################
+        # git add .
+        logDebug "($ADD)"
+        RES=$(eval $ADD $NOMSG)
         code=$?
         logDebug "$RES"
         if [ $code -ne 0 ] ; then
             err=$((err+1))
-            logDebug "git add . failed"
+            logDebug "$ADD failed"
         else
-            logDebug "Success run (git add .)"
+            logDebug "Success run ($ADD)"
 
+            ##########################################
+            # git commit -m "message"
             DATE=$(getDate)
             MINS=$((WAIT/60))
-            logDebug "(git commit -m \"message $DATE, ...${WAIT}s|${MINS}m\")"
-            RES=$(git commit -m "Auto update ran at $DATE, next in ${WAIT}s|${MINS}m" < /dev/null 2>&1 > /dev/null)
+            logDebug "($COMMIT \"message $DATE, ...${WAIT}s|${MINS}m\")"
+            RES=$(eval $COMMIT -m "Auto update ran at $DATE, next in ${WAIT}s|${MINS}m" $NOMSG)
             code=$?
             logDebug "$RES"
             if [ $code -ne 0 ] ; then
                 err=$((err+2))
-                logDebug "git commit -m \"message\" failed."
+                logDebug "$COMMIT \"message\" failed."
             else
-                logDebug "Success run command line (git commit -m \"message...\")"
+                logDebug "Success run command line ($COMMIT \"message...\")"
 
-                logDebug "(git pull)"
-                RES=$(git pull origin < /dev/null 2>&1 > /dev/null)
+                ##########################################
+                # git pull origin
+                logDebug "($PULL)"
+                RES=$(eval $PULL $NOMSG)
                 code=$?
                 logDebug "$RES"
                 if [ $code -ne 0 ] ; then
                     err=$((err+4))
-                    logDebug "git pull origin failed"
+                    logDebug "$PULL failed"
                 else
-                    logDebug "Success run command line (git pull origin)"
+                    logDebug "Success run command line ($PULL)"
 
-                    logDebug "(git push)"
-                    RES=$(git push origin < /dev/null 2>&1 > /dev/null)
+                    ##########################################
+                    # git push origin
+                    logDebug "($PUSH)"
+                    RES=$(eval $PUSH $NOMSGG)
                     code=$?
                     logDebug "$RES"
                     if [ $code -ne 0 ] ; then
                         err=$((err+8))
-                        logError "git push origin failed"
+                        logError "$PUSH failed"
                     else
-                        logDebug "Success run command line (git push origin)"
+                        logDebug "Success run command line ($PUSH)"
                     fi
                 fi
             fi
         fi
     fi
 
+    # any error send a notify message
     if [ $err -ne 0 ] ; then
         notify-send -a $SCRIPT -u normal -t 15000 --icon=$ICONFAIL "Update ($REPO) error ($err)"
     fi
@@ -167,7 +183,9 @@ function _exit
     # get error code parameters, empty set as zero.
     local CODE
     CODE=$( [ -n "$1" ] && echo $1 || echo 0 )
+
     logDebug "Exit code ($CODE)"
+
     # unset global variables
     unset -v START
     unset -v SCRIPTNAME
@@ -177,6 +195,13 @@ function _exit
     unset -v LOGDEBUG
     unset -v DEBUG
     unset -v VERSION
+
+    unset -v ADD
+    unset -v COMMIT
+    unset -v PULL
+    unset -v PUSH
+    unset -v NOMSG
+
     unset -v RED
     unset -v GREEN
     unset -v YELLOW
@@ -185,6 +210,7 @@ function _exit
     unset -v CYAN
     unset -v WHITE
     unset -v NC
+
     # unset functions
     unset -f main
     unset -f _update
@@ -197,6 +223,7 @@ function _exit
     unset -f logNewLine
     unset -f logClear
     unset -f _exit
+
     # exit error code
     exit $CODE
 }
