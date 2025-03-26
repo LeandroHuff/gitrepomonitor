@@ -10,7 +10,7 @@ DEBUG=0
 VERSION="3.0.0"
 
 ADD="git add ."
-COMMIT="git commit"
+COMMIT="git commit -m"
 PULL="git pull"
 PUSH="git push"
 NOMSG="< /dev/null 2>&1 > /dev/null"
@@ -118,7 +118,7 @@ function _update
         ##########################################
         # git add .
         logDebug "($ADD)"
-        RES=$(eval $ADD $NOMSG)
+        RES=$(eval "$ADD $NOMSG")
         code=$?
         logDebug "$RES"
         if [ $code -ne 0 ] ; then
@@ -132,7 +132,7 @@ function _update
             DATE=$(getDate)
             MINS=$((WAIT/60))
             logDebug "($COMMIT \"message $DATE, ...${WAIT}s|${MINS}m\")"
-            RES=$(eval $COMMIT -m "Auto update ran at $DATE, next in ${WAIT}s|${MINS}m" $NOMSG)
+            RES=$(eval "$COMMIT \"Auto update ran at $DATE, next in ${WAIT}s|${MINS}m\" $NOMSG")
             code=$?
             logDebug "$RES"
             if [ $code -ne 0 ] ; then
@@ -144,7 +144,7 @@ function _update
                 ##########################################
                 # git pull origin
                 logDebug "($PULL)"
-                RES=$(eval $PULL $NOMSG)
+                RES=$(eval "$PULL $NOMSG")
                 code=$?
                 logDebug "$RES"
                 if [ $code -ne 0 ] ; then
@@ -156,7 +156,7 @@ function _update
                     ##########################################
                     # git push origin
                     logDebug "($PUSH)"
-                    RES=$(eval $PUSH $NOMSGG)
+                    RES=$(eval "$PUSH $NOMSGG")
                     code=$?
                     logDebug "$RES"
                     if [ $code -ne 0 ] ; then
