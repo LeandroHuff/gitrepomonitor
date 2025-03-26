@@ -1,9 +1,11 @@
 #!/bin/bash
 
 START=$(( $(date +%s%N) / 1000000 ))
-SCRIPTNAME=$(basename "$0")
-LOGFILE="/tmp/${SCRIPTNAME%.*}.log"
-LOGDEBUG="/tmp/${SCRIPTNAME%.*}.dbg"
+SCRIPT=$(basename "$0")
+SCRIPTNAME="${SCRIPT%.*}"
+LOGFILE="/tmp/$SCRIPTNAME.log"
+LOGDEBUG="/tmp/$SCRIPTNAME.dbg"
+ICONFAIL="/usr/local/bin/failure.png"
 DEBUG=0
 VERSION="3.0.0"
 
@@ -68,7 +70,7 @@ function _help
 cat << EOT
 File to run a shell script program as a daemon.
 Version: ${WHITE}$VERSION${NC}
-Usage  : ${WHITE}$SCRIPTNAME${NC} [option] <value>
+Usage  : ${WHITE}$SCRIPT${NC} [option] <value>
 Option:
  -h | --help                Show this help information and return.
  -d | --debug               Enable debug mode.
@@ -116,45 +118,46 @@ function _update
             return 1
         else
             logDebug "Success run (git add .)"
-        fi
 
-        DATE=$(getDate)
-        MINS=$((WAIT/60))
-        logDebug "(git commit -S -m \"message $DATE, ...${WAIT}s|${MINS}m\")"
-        RES=$(git commit -S -m "Auto update ran at $DATE, next in ${WAIT}s|${MINS}m")
-        code=$?
-        logDebug "$RES"
-        if [ $code -ne 0 ] ; then
-            err=$((err+2))
-            logDebug "git commit -S -m \"message\" failed."
-            return 1
-        else
-            logDebug "Success run command line (git commit -S -m \"message...\")"
-        fi
+            DATE=$(getDate)
+            MINS=$((WAIT/60))
+            logDebug "(git commit -S -m \"message $DATE, ...${WAIT}s|${MINS}m\")"
+            RES=$(git commit -S -m "Auto update ran at $DATE, next in ${WAIT}s|${MINS}m")
+            code=$?
+            logDebug "$RES"
+            if [ $code -ne 0 ] ; then
+                err=$((err+2))
+                logDebug "git commit -S -m \"message\" failed."
+            else
+                logDebug "Success run command line (git commit -S -m \"message...\")"
 
-        logDebug "(git pull)"
-        RES=$(git pull origin)
-        code=$?
-        logDebug "$RES"
-        if [ $code -ne 0 ] ; then
-            err=$((err+4))
-            logDebug "git pull origin failed"
-            return 1
-        else
-            logDebug "Success run command line (git pull origin)"
-        fi
+                logDebug "(git pull)"
+                RES=$(git pull origin)
+                code=$?
+                logDebug "$RES"
+                if [ $code -ne 0 ] ; then
+                    err=$((err+4))
+                    logDebug "git pull origin failed"
+                else
+                    logDebug "Success run command line (git pull origin)"
 
-        logDebug "(git push)"
-        RES=$(git push origin)
-        code=$?
-        logDebug "$RES"
-        if [ $code -ne 0 ] ; then
-            err=$((err+8))
-            logError "git push origin failed"
-            return 1
-        else
-            logDebug "Success run command line (git push origin)"
+                    logDebug "(git push)"
+                    RES=$(git push origin)
+                    code=$?
+                    logDebug "$RES"
+                    if [ $code -ne 0 ] ; then
+                        err=$((err+8))
+                        logError "git push origin failed"
+                    else
+                        logDebug "Success run command line (git push origin)"
+                    fi
+                fi
+            fi
         fi
+    fi
+
+    if [ $err -ne 0 ] ; then
+        notify-send -a $SCRIPTNAME -u normal -t 3000 --icon=$ICONFAIL "Update $REPO.git return an error code ($err)."
     fi
 
     return $err
@@ -169,6 +172,8 @@ function _exit
     # unset global variables
     unset -v START
     unset -v SCRIPTNAME
+    unset -v SCRIPT
+    unset -v ICONFAIL
     unset -v LOGFILE
     unset -v LOGDEBUG
     unset -v DEBUG
