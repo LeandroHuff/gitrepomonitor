@@ -108,14 +108,13 @@ function _update
     then
         logDebug "Nothing to do"
     else
-        logDebug "(git add .)"
+        logDebug "(git addd .)"
         RES=$(git add .)
         code=$?
         logDebug "$RES"
         if [ $code -ne 0 ] ; then
             err=$((err+1))
             logDebug "git add . failed"
-            return 1
         else
             logDebug "Success run (git add .)"
 
