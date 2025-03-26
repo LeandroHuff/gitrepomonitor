@@ -109,7 +109,7 @@ function _update
         logDebug "Nothing to do"
     else
         logDebug "(git addd .)"
-        RES=$(git add .)
+        RES=$(git addd . < /dev/null 2>&1 > /dev/null)
         code=$?
         logDebug "$RES"
         if [ $code -ne 0 ] ; then
@@ -120,18 +120,18 @@ function _update
 
             DATE=$(getDate)
             MINS=$((WAIT/60))
-            logDebug "(git commit -S -m \"message $DATE, ...${WAIT}s|${MINS}m\")"
-            RES=$(git commit -S -m "Auto update ran at $DATE, next in ${WAIT}s|${MINS}m")
+            logDebug "(git commit -m \"message $DATE, ...${WAIT}s|${MINS}m\")"
+            RES=$(git commit -m "Auto update ran at $DATE, next in ${WAIT}s|${MINS}m" < /dev/null 2>&1 > /dev/null)
             code=$?
             logDebug "$RES"
             if [ $code -ne 0 ] ; then
                 err=$((err+2))
-                logDebug "git commit -S -m \"message\" failed."
+                logDebug "git commit -m \"message\" failed."
             else
-                logDebug "Success run command line (git commit -S -m \"message...\")"
+                logDebug "Success run command line (git commit -m \"message...\")"
 
                 logDebug "(git pull)"
-                RES=$(git pull origin)
+                RES=$(git pull origin < /dev/null 2>&1 > /dev/null)
                 code=$?
                 logDebug "$RES"
                 if [ $code -ne 0 ] ; then
@@ -141,7 +141,7 @@ function _update
                     logDebug "Success run command line (git pull origin)"
 
                     logDebug "(git push)"
-                    RES=$(git push origin)
+                    RES=$(git push origin < /dev/null 2>&1 > /dev/null)
                     code=$?
                     logDebug "$RES"
                     if [ $code -ne 0 ] ; then
@@ -156,7 +156,7 @@ function _update
     fi
 
     if [ $err -ne 0 ] ; then
-        notify-send -a $SCRIPTNAME -u normal -t 3000 --icon=$ICONFAIL "Update $REPO.git return an error code ($err)."
+        notify-send -a $SCRIPT -u normal -t 15000 --icon=$ICONFAIL "Update ($REPO) error ($err)"
     fi
 
     return $err
